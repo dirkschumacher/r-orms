@@ -8,7 +8,7 @@ defaultContentLanguageInSubdir= true
 ignoreFiles = ["\\.Rmd$", "\\.Rmarkdown$", "_files$", "_cache$"]
 
 [params]
-  description = "R for Operations Research - free and open-source ressources to solve complex optimization problems with R."
+  description = "R for Operations Research - free and open-source resources to solve complex optimization problems with R."
   author = "Dirk Schumacher"
   showVisitedLinks = false
   themeVariant = "green"
