@@ -1,0 +1,28 @@
+---
+date: 2018-04-28T14:30:03+02:00
+title: Introduction
+weight: 5
+---
+
+
+
+<p>We start this section with an introductory example: the <a href="https://en.wikipedia.org/wiki/Knapsack_problem">Knapsack Problem</a>.</p>
+<p>The goal is to put as many of <span class="math inline">\(n\)</span> items as possible with value <span class="math inline">\(v_i\)</span> and weight <span class="math inline">\(w_i\)</span> in a bag of capacity <span class="math inline">\(W\)</span>. Imagine you are a shipping company and you need to decide what items you would like to put into a shipment container such that the overall profit is maximized.</p>
+<p><span class="math display">\[
+\begin{equation*}
+\begin{array}{ll@{}ll}
+\text{max}  &amp; \displaystyle\sum\limits_{i=1}^{n} v_{i}x_{i} &amp; &amp;\\
+\text{subject to}&amp; \displaystyle\sum\limits_{i=1}^{n}   w_{i}x_{i} \leq W,  &amp; &amp;\\
+                 &amp;                                                x_{i} \in \{0,1\}, &amp;i=1 ,\ldots, n&amp;
+\end{array}
+\end{equation*}
+\]</span></p>
+<p>As alluded to in the beginning, this <em>integer program</em> consists of 3 parts:</p>
+<ul>
+<li>An objective function (here it is the sum of item values)</li>
+<li>A set of contraints. In this case, there is only one constraint that total weight of all items does not exceed the weight capacity <span class="math inline">\(W\)</span>.</li>
+<li>Some conditions on the variables. All variables are binary, meaning they are <em>bounded</em> by 0/1 and are <em>integers</em>. This allows the variables to be either 0 or 1.</li>
+</ul>
+<p>Having derived such a model that describes a relevant optimization problem, we need to solve it. The first step is to encode the problem in a way that an algorithm can understand it (the most basic form is a set of vectors and a constraint matrix). Having such a standard interface, many <a href="../solvers">specialized solvers</a> have been developed over the years (both commercial and open-source) to solve these kind of problems at a scale required for real world problems.</p>
+<p>R has many packages that help you model and solve mixed-integer linear programs.
+The section about <a href="../packages">modelling packages</a> shows how to model this problem in R.</p>

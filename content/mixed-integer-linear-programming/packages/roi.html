@@ -1,0 +1,74 @@
+---
+title: "Matrix-oriented modelling with ROI"
+date: 2018-04-28T22:20:37+02:00
+draft: false
+---
+
+
+
+<div id="a-first-example" class="section level2">
+<h2>A first example</h2>
+<p>In this article, we take the Knapsack problem from before and model it using the matrix based interface in <a href="https://CRAN.R-project.org/package=ROI">ROI</a>. <code>ROI</code> is short for the <em>R Optimization Infrastructure</em> and is an excellent family of packages to solve a variaty of optimization problems, including MILPs.</p>
+<p><span class="math display">\[
+\begin{equation*}
+\begin{array}{ll@{}ll}
+\text{max}  &amp; \displaystyle\sum\limits_{i=1}^{n} v_{i}x_{i} &amp; &amp;\\
+\text{subject to}&amp; \displaystyle\sum\limits_{i=1}^{n}   w_{i}x_{i} \leq W,  &amp; &amp;\\
+                 &amp;                                                x_{i} \in \{0,1\}, &amp;i=1 ,\ldots, n&amp;
+\end{array}
+\end{equation*}
+\]</span></p>
+<p>A first step is of course to load the package and define some model parameters:</p>
+<pre class="r"><code>library(ROI)</code></pre>
+<pre><code>## ROI.plugin.glpk: R Optimization Infrastructure</code></pre>
+<pre><code>## Registered solver plugins: nlminb, glpk.</code></pre>
+<pre><code>## Default solver: auto.</code></pre>
+<pre class="r"><code>n &lt;- 10
+W &lt;- 2
+v &lt;- runif(n)
+w &lt;- runif(n)</code></pre>
+<p>Here <code>v</code> and <code>w</code> are vectors of the length <code>n</code> that can be directly passed to ROI.</p>
+<p>Let’s build the constraint first. As the Knapsack problem only has one constraint (i.e. one row in the constraint matrix), this step is rather simple:</p>
+<pre class="r"><code>constraints &lt;- L_constraint(w, &quot;&lt;=&quot;, W)</code></pre>
+<p>Then we define an optimization model:</p>
+<pre class="r"><code>model &lt;- OP(objective = v, 
+            constraints = constraints,
+            bounds = V_bound(li = 1:n, lb = rep.int(0, n), ui = 1:n, ub = rep.int(1, n)), 
+            types = rep.int(&quot;B&quot;, n), 
+            maximum = TRUE)
+model</code></pre>
+<pre><code>## ROI Optimization Problem:
+## 
+## Maximize a linear objective function of length 10 with
+## - 10 binary objective variables,
+## 
+## subject to
+## - 1 constraint of type linear.
+## - 0 lower and 10 upper non-standard variable bounds.</code></pre>
+<p>The parameters of <code>OP</code> are self-explaining: we create an optimization problem with the objective coefficient vector <code>v</code> and our constraint from above. We further define variable bounds for all <span class="math inline">\(0 \leq x_i\leq 1\)</span> and set the type to “B”, meaning they are binary variables.</p>
+<p>Having now formulated our problem, we can pass it to one of the many available solvers. In this case we use <a href="https://en.wikipedia.org/wiki/GNU_Linear_Programming_Kit">GLPK</a>.</p>
+<pre class="r"><code>library(ROI.plugin.glpk)
+res &lt;- ROI_solve(model, &quot;glpk&quot;, verbose = TRUE)</code></pre>
+<pre><code>## &lt;SOLVER MSG&gt;  ----
+## GLPK Simplex Optimizer, v4.63
+## 1 row, 10 columns, 10 non-zeros
+## *     0: obj =  -0.000000000e+00 inf =   0.000e+00 (10)
+## *     8: obj =   3.847203106e+00 inf =   0.000e+00 (0)
+## OPTIMAL LP SOLUTION FOUND
+## GLPK Integer Optimizer, v4.63
+## 1 row, 10 columns, 10 non-zeros
+## 10 integer variables, all of which are binary
+## Integer optimization begins...
+## +     8: mip =     not found yet &lt;=              +inf        (1; 0)
+## Solution found by heuristic: 3.80094569153
+## +     9: mip =   3.800945692e+00 &lt;=     tree is empty   0.0% (0; 1)
+## INTEGER OPTIMAL SOLUTION FOUND
+## &lt;!SOLVER MSG&gt; ----</code></pre>
+<pre class="r"><code>res</code></pre>
+<pre><code>## Optimal solution found.
+## The objective value is: 3.800946e+00</code></pre>
+<p><code>ROI</code> provides function to access the optimal solution (i.e. the concrete values of all <span class="math inline">\(x_i\)</span>). A <span class="math inline">\(1\)</span> means, we put the object into our knapsack, a <span class="math inline">\(0\)</span> means the opposite.</p>
+<pre class="r"><code>ROI::solution(res)</code></pre>
+<pre><code>##  [1] 1 0 1 1 1 0 0 1 1 0</code></pre>
+<p>And we are done: we solved the knapsack problem using GLPK and ROI.</p>
+</div>

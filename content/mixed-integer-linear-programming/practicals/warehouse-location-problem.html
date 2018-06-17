@@ -1,0 +1,157 @@
+---
+title: "Warehouse location problem"
+date: 2018-04-12T20:56:54+02:00
+author: Dirk Schumacher
+draft: false
+ogimage: mixed-integer-linear-programming/practicals/warehouse-location-problem_files/figure-html/warehouse-1.png
+---
+
+
+
+<div id="introduction" class="section level2">
+<h2>Introduction</h2>
+<p>In this article we will look at the <a href="https://en.wikipedia.org/wiki/Facility_location_problem">Warehouse Location Problem</a>. Given a set of customers and set of locations to build warehoses the task is to decide where to build warehouses and from what warehouses goods should be shipped to which customer.</p>
+<p>Thus there are two decisions that need to made at once: where and if to build warehouses and the assignment of customers to warehouses. This simple setting also implies that at least one warehouse must be built and that any warehouse is big enough to serve all customers.</p>
+<p>As a practical example: you run the logistics for an NGO and want to regularly distribute goods to people in need. You identified a set of possible locations to set up your distribution hubs, but you are not sure where to build them. Then such a model might help. In practice however you might need to incorporate additional constraints into the model.</p>
+</div>
+<div id="the-mathematical-model" class="section level2">
+<h2>The mathematical model</h2>
+<p>We start with a set of customers <span class="math inline">\(C = \{1 \ldots n\}\)</span> and a set of possible warehouses <span class="math inline">\(W = \{1 \ldots m\}\)</span> that could be built. In addition we have a cost function giving us the transportation cost from a warehouse to a customer. Furthermore there is a fixed cost associated with each warehouse if it will be built. This basic version of the warehouse location problem is adapted from the <a href="https://de.wikipedia.org/wiki/Warehouse_Location_Problem">German Wikipedia page</a> about the problem.</p>
+<p><span class="math display">\[
+\begin{equation*}
+\begin{array}{ll@{}ll}
+\text{min}  &amp; \displaystyle\sum\limits_{i=1}^{n}\sum\limits_{j=1}^{m}\operatorname{transportcost}_{i,j} \cdot x_{i, j} +  \sum\limits_{j=1}^{m}\operatorname{fixedcost}_{j} \cdot y_{j}&amp; &amp;\\
+\text{subject to} &amp; \displaystyle\sum\limits_{j=1}^{m}   x_{i, j} = 1  &amp; i=1 ,\ldots, n&amp;\\
+                  &amp; \displaystyle x_{i, j} \leq y_j,  &amp; i=1 ,\ldots, n &amp; j=1 ,\ldots, m&amp;\\
+                 &amp;                                                x_{i,j} \in \{0,1\} &amp;i=1 ,\ldots, n, &amp; j=1 ,\ldots, m \\
+                 &amp;                                                y_{j} \in \{0,1\} &amp;j=1 ,\ldots, m&amp;
+\end{array}
+\end{equation*}
+\]</span></p>
+</div>
+<div id="the-model-in-r" class="section level2">
+<h2>The model in R</h2>
+<p>The first thing we need is the data. In this article we will simply generate artificial data.</p>
+<p>We assume the <strong>customers</strong> are located in a grid with euclidian distances:</p>
+<pre class="r"><code>set.seed(1234)
+grid_size &lt;- 1000
+n &lt;- 100
+customer_locations &lt;- data.frame(
+  id = 1:n,
+  x = round(runif(n) * grid_size),
+  y = round(runif(n) * grid_size)
+)</code></pre>
+<p>The <strong>warehouses</strong> are also randomly placed on the grid. The fixed cost for the warehouses are randomly generated as well with mean cost of 10,000.</p>
+<pre class="r"><code>m &lt;- 20
+warehouse_locations &lt;- data.frame(
+  id = 1:m,
+  x = round(runif(m) * grid_size),
+  y = round(runif(m) * grid_size)
+)
+fixedcost &lt;- round(rnorm(m, mean = grid_size * 10, sd = grid_size * 5))</code></pre>
+<p>The fixed costs to set up a warehouse are the following:</p>
+<pre class="r"><code>fixedcost</code></pre>
+<pre><code>##  [1]  9043  6090 20291 13753 19121 10400  6843  2434  6820 11132 15068
+## [12] 11264  4140 13344  1749  8171  8419   259 14600  6886</code></pre>
+<p>Next step is to build a functions that takes a customer and a warehouse and returns the transport cost.</p>
+<pre class="r"><code>transportcost &lt;- function(i, j) {
+  customer &lt;- customer_locations[i, ]
+  warehouse &lt;- warehouse_locations[j, ]
+  round(sqrt((customer$x - warehouse$x)^2 + (customer$y - warehouse$y)^2))
+}
+transportcost(1, 3)</code></pre>
+<pre><code>## [1] 302</code></pre>
+<p>Now let’s plot everything. Black dots are customers and red dots are possible warehouse locations.</p>
+<pre class="r"><code>library(ggplot2)
+p &lt;- ggplot(customer_locations, aes(x, y)) + 
+  geom_point() + 
+  geom_point(data = warehouse_locations, color = &quot;red&quot;, alpha = 0.5, shape = 17) +
+  scale_x_continuous(limits = c(0, grid_size)) +
+  scale_y_continuous(limits = c(0, grid_size)) +
+  theme(axis.title = element_blank(), 
+        axis.ticks = element_blank(), 
+        axis.text = element_blank(), panel.grid = element_blank())
+p + ggtitle(&quot;Warehouse location problem&quot;, 
+          &quot;Black dots are customers. Light red triangles show potential warehouse locations.&quot;)</code></pre>
+<p><img src="/mixed-integer-linear-programming/practicals/warehouse-location-problem_files/figure-html/unnamed-chunk-5-1.png" width="672" /></p>
+<p>The model in <code>ompr</code> then looks like this:</p>
+<pre class="r"><code>library(ompr)
+library(magrittr)
+model &lt;- MIPModel() %&gt;%
+  # 1 iff i gets assigned to warehouse j
+  add_variable(x[i, j], i = 1:n, j = 1:m, type = &quot;binary&quot;) %&gt;%
+  
+  # 1 iff warehouse j is built
+  add_variable(y[j], j = 1:m, type = &quot;binary&quot;) %&gt;%
+  
+  # maximize the preferences
+  set_objective(sum_expr(transportcost(i, j) * x[i, j], i = 1:n, j = 1:m) + 
+                  sum_expr(fixedcost[j] * y[j], j = 1:m), &quot;min&quot;) %&gt;%
+  
+  # every customer needs to be assigned to a warehouse
+  add_constraint(sum_expr(x[i, j], j = 1:m) == 1, i = 1:n) %&gt;% 
+  
+  # if a customer is assigned to a warehouse, then this warehouse must be built
+  add_constraint(x[i,j] &lt;= y[j], i = 1:n, j = 1:m)
+model</code></pre>
+<pre><code>## Mixed integer linear optimization problem
+## Variables:
+##   Continuous: 0 
+##   Integer: 0 
+##   Binary: 2020 
+## Model sense: minimize 
+## Constraints: 2100</code></pre>
+</div>
+<div id="solve-the-model" class="section level2">
+<h2>Solve the model</h2>
+<p>We will use <code>glpk</code> to solve the above model.</p>
+<pre class="r"><code>library(ompr.roi)
+library(ROI.plugin.glpk)
+result &lt;- solve_model(model, with_ROI(solver = &quot;glpk&quot;, verbose = TRUE))</code></pre>
+<pre><code>## &lt;SOLVER MSG&gt;  ----
+## GLPK Simplex Optimizer, v4.63
+## 2100 rows, 2020 columns, 6000 non-zeros
+##       0: obj =   0.000000000e+00 inf =   1.000e+02 (100)
+##     101: obj =   5.223300000e+04 inf =   0.000e+00 (0)
+## Perturbing LP to avoid stalling [398]...
+## Removing LP perturbation [857]...
+## *   857: obj =   3.322200000e+04 inf =   0.000e+00 (0) 3
+## OPTIMAL LP SOLUTION FOUND
+## GLPK Integer Optimizer, v4.63
+## 2100 rows, 2020 columns, 6000 non-zeros
+## 2020 integer variables, all of which are binary
+## Integer optimization begins...
+## +   857: mip =     not found yet &gt;=              -inf        (1; 0)
+## +   857: &gt;&gt;&gt;&gt;&gt;   3.322200000e+04 &gt;=   3.322200000e+04   0.0% (1; 0)
+## +   857: mip =   3.322200000e+04 &gt;=     tree is empty   0.0% (0; 1)
+## INTEGER OPTIMAL SOLUTION FOUND
+## &lt;!SOLVER MSG&gt; ----</code></pre>
+<p>We solved the problem with an objective value of 33222.</p>
+<pre class="r"><code>suppressPackageStartupMessages(library(dplyr))
+matching &lt;- result %&gt;% 
+  get_solution(x[i,j]) %&gt;%
+  filter(value &gt; .9) %&gt;%  
+  select(i, j)</code></pre>
+<p>The last step is to add the assignments to the previous plot we generated.</p>
+<pre class="r"><code>plot_assignment &lt;- matching %&gt;% 
+  inner_join(customer_locations, by = c(&quot;i&quot; = &quot;id&quot;)) %&gt;% 
+  inner_join(warehouse_locations, by = c(&quot;j&quot; = &quot;id&quot;))
+customer_count &lt;- matching %&gt;% group_by(j) %&gt;% summarise(n = n()) %&gt;% rename(id = j)
+plot_warehouses &lt;- warehouse_locations %&gt;% 
+  mutate(costs = fixedcost) %&gt;% 
+  inner_join(customer_count, by = &quot;id&quot;) %&gt;% 
+  filter(id %in% unique(matching$j))
+p + 
+  geom_segment(data = plot_assignment, aes(x = x.y, y = y.y, xend = x.x, yend = y.x)) + 
+  geom_point(data  = plot_warehouses, color = &quot;red&quot;, size = 3, shape = 17) +
+  ggrepel::geom_label_repel(data  = plot_warehouses, 
+                            aes(label = paste0(&quot;fixed costs:&quot;, costs, &quot;; customers: &quot;, n)), 
+                            size = 2, nudge_y = 20) + 
+  ggtitle(paste0(&quot;Cost optimal warehouse locations and customer assignment&quot;),
+          &quot;Big red triangles show warehouses that will be built, light red are unused warehouse locations. 
+Dots represent customers served by the respective warehouses.&quot;)</code></pre>
+<p><img src="/mixed-integer-linear-programming/practicals/warehouse-location-problem_files/figure-html/warehouse-1.png" width="672" /></p>
+<p>The fixed costs for setting up the 4 warehouses is:</p>
+<pre class="r"><code>sum(fixedcost[unique(matching$j)])</code></pre>
+<pre><code>## [1] 11285</code></pre>
+</div>

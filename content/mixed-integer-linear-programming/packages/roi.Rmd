@@ -1,0 +1,69 @@
+---
+title: "Matrix-oriented modelling with ROI"
+date: 2018-04-28T22:20:37+02:00
+draft: false
+---
+
+## A first example
+
+In this article, we take the Knapsack problem from before and model it using the matrix based interface in [ROI](https://CRAN.R-project.org/package=ROI). `ROI` is short for the *R Optimization Infrastructure* and is an excellent family of packages to solve a variaty of optimization problems, including MILPs.
+
+$$
+\begin{equation*}
+\begin{array}{ll@{}ll}
+\text{max}  & \displaystyle\sum\limits_{i=1}^{n} v_{i}x_{i} & &\\
+\text{subject to}& \displaystyle\sum\limits_{i=1}^{n}   w_{i}x_{i} \leq W,  & &\\
+                 &                                                x_{i} \in \{0,1\}, &i=1 ,\ldots, n&
+\end{array}
+\end{equation*}
+$$
+
+A first step is of course to load the package and define some model parameters:
+
+```{r}
+library(ROI)
+```
+
+```{r}
+n <- 10
+W <- 2
+v <- runif(n)
+w <- runif(n)
+```
+
+Here `v` and `w` are vectors of the length `n` that can be directly passed to ROI. 
+
+Let's build the constraint first. As the Knapsack problem only has one constraint (i.e. one row in the constraint matrix), this step is rather simple:
+
+```{r}
+constraints <- L_constraint(w, "<=", W)
+```
+
+Then we define an optimization model:
+
+```{r}
+model <- OP(objective = v, 
+            constraints = constraints,
+            bounds = V_bound(li = 1:n, lb = rep.int(0, n), ui = 1:n, ub = rep.int(1, n)), 
+            types = rep.int("B", n), 
+            maximum = TRUE)
+model
+```
+
+The parameters of `OP` are self-explaining: we create an optimization problem with the objective coefficient vector `v` and our constraint from above. We further define variable bounds for all $0 \leq x_i\leq 1$ and set the type to "B", meaning they are binary variables.
+
+Having now formulated our problem, we can pass it to one of the many available solvers. In this case we use [GLPK](https://en.wikipedia.org/wiki/GNU_Linear_Programming_Kit).
+
+```{r}
+library(ROI.plugin.glpk)
+res <- ROI_solve(model, "glpk", verbose = TRUE)
+res
+```
+
+`ROI` provides function to access the optimal solution (i.e. the concrete values of all $x_i$). A $1$ means, we put the object into our knapsack, a $0$ means the opposite.
+
+```{r}
+ROI::solution(res)
+```
+
+And we are done: we solved the knapsack problem using GLPK and ROI. 

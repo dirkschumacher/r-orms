@@ -1,0 +1,42 @@
+languageCode = "en-US"
+defaultContentLanguage = "en"
+baseURL = "https://www.r-orms.org"
+title = "R for Operations Research"
+theme = "hugo-theme-learn"
+metaDataFormat = "yaml"
+defaultContentLanguageInSubdir= true
+ignoreFiles = ["\\.Rmd$", "\\.Rmarkdown$", "_files$", "_cache$"]
+
+[params]
+  description = "R for Operations Research - free and open-source ressources to solve complex optimization problems with R."
+  author = "Dirk Schumacher"
+  showVisitedLinks = false
+  themeVariant = "green"
+  disableSearch = true
+  defaultogimage = "mixed-integer-linear-programming/practicals/warehouse-location-problem_files/figure-html/warehouse-1.png"
+
+[outputs]
+home = [ "HTML"]
+
+[Languages]
+[Languages.en]
+title = "R for Operations Research"
+weight = 1
+languageName = "English"
+
+[[Languages.en.menu.shortcuts]]
+name = "<i class='fa fa-fw fa-github'></i> Github repo"
+identifier = "ds"
+url = "https://github.com/dirkschumacher/r-orms"
+weight = 10
+
+[[Languages.en.menu.shortcuts]]
+name = "<i class='fa fa-fw fa-bullhorn'></i> Credits"
+url = "/credits"
+weight = 30
+
+[[Languages.en.menu.shortcuts]]
+name = "<i class='fa fa-fw fa-bank'></i> Imprint"
+url = "/imprint"
+weight = 40
+

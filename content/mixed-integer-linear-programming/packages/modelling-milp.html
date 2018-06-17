@@ -1,0 +1,331 @@
+---
+title: "Algeraic modelling with OMPR"
+date: 2018-04-12T20:56:54+02:00
+author: Dirk Schumacher
+draft: false
+weight: 1
+---
+
+
+
+<p>This article discribes the modelling techniques available in <code>ompr</code> to make your life easier when developing a mixed integer programming model.</p>
+<div id="a-first-example" class="section level2">
+<h2>A first example</h2>
+<p>The Knapsack problem, as described in the <a href="/mixed-integer-programming/introduction/">introduction</a> looks like this:
+<span class="math display">\[
+\begin{equation*}
+\begin{array}{ll@{}ll}
+\text{max}  &amp; \displaystyle\sum\limits_{i=1}^{n} v_{i}x_{i} &amp; &amp;\\
+\text{subject to}&amp; \displaystyle\sum\limits_{i=1}^{n}   w_{i}x_{i} \leq W,  &amp; &amp;\\
+                 &amp;                                                x_{i} \in \{0,1\}, &amp;i=1 ,\ldots, n&amp;
+\end{array}
+\end{equation*}
+\]</span></p>
+<p>This is the <code>ompr</code> equivalent:</p>
+<pre class="r"><code>library(ompr)
+library(magrittr)
+n &lt;- 10; W &lt;- 2
+v &lt;- runif(n);w &lt;- runif(n)
+model &lt;- MILPModel() %&gt;% 
+  add_variable(x[i], i = 1:n, type = &quot;binary&quot;) %&gt;% 
+  set_objective(sum_expr(colwise(v[i]) * x[i], i = 1:n)) %&gt;% 
+  add_constraint(sum_expr(colwise(w[i]) * x[i], i = 1:n) &lt;= W)</code></pre>
+<p>The overall idea is to use modern R idioms to construct models like the one above as readable as possible directly in R. <code>ompr</code> will do the heavy lifting and transforms everything into matrices/vectors and pass it to your favorite solver.</p>
+<pre class="r"><code>library(ROI.plugin.glpk)
+library(ompr.roi)
+result &lt;- solve_model(model, with_ROI(&quot;glpk&quot;))</code></pre>
+<pre class="r"><code>get_solution(result, x[i])</code></pre>
+<pre><code>##    variable  i value
+## 1         x  1     1
+## 2         x  2     1
+## 3         x  3     1
+## 4         x  4     0
+## 5         x  5     1
+## 6         x  6     1
+## 7         x  7     0
+## 8         x  8     1
+## 9         x  9     0
+## 10        x 10     0</code></pre>
+</div>
+<div id="vectorized-semantics" class="section level2">
+<h2>Vectorized semantics</h2>
+<p><code>ompr</code> supppots different backends. A backend is the empty model to which you add variables, constraints etc. Currently two backends exist: <code>MIPModel</code> and <code>MILPModel</code>. This vignette describes the latter as the first will become deprecated.</p>
+<p>Compared to the old <code>MIPModel</code> backend, <code>MILPModel</code> has vectorized semantics. Meaning that model variables accept and expect vectors. This enables a speedup by a factor of 1000 and more. More details can be found at the end of this document.</p>
+</div>
+<div id="pipes" class="section level2">
+<h2>Pipes</h2>
+<p>Each function in <code>ompr</code> creates immutable copies of the models. In addition the function interface has been designed to work with <code>magrittr</code> pipes. You always start with an empty model and add components to it.</p>
+<pre class="r"><code>MILPModel() %&gt;% 
+  add_variable(x) %&gt;% 
+  set_objective(x) %&gt;% 
+  add_constraint(x &lt;= 1)</code></pre>
+<pre><code>## Mixed integer linear optimization problem
+## Variables:
+##   Continuous: 1 
+##   Integer: 0 
+##   Binary: 0 
+## Model sense: maximize 
+## Constraints: 1</code></pre>
+</div>
+<div id="variable-types" class="section level2">
+<h2>Variable types</h2>
+<p>Variables can be of type <code>continuous</code>, <code>integer</code> or <code>binary</code>.</p>
+<pre class="r"><code>MILPModel() %&gt;% 
+  add_variable(x, type = &quot;integer&quot;) %&gt;% 
+  add_variable(y, type = &quot;continuous&quot;) %&gt;% 
+  add_variable(z, type = &quot;binary&quot;)</code></pre>
+<pre><code>## Mixed integer linear optimization problem
+## Variables:
+##   Continuous: 1 
+##   Integer: 1 
+##   Binary: 1 
+## No objective function. 
+## Constraints: 0</code></pre>
+</div>
+<div id="variable-bounds" class="section level2">
+<h2>Variable bounds</h2>
+<p>Variables can have lower and upper bounds.</p>
+<pre class="r"><code>MILPModel() %&gt;% 
+  add_variable(x, lb = 10) %&gt;% 
+  add_variable(y, lb = 5, ub = 10)</code></pre>
+<pre><code>## Mixed integer linear optimization problem
+## Variables:
+##   Continuous: 2 
+##   Integer: 0 
+##   Binary: 0 
+## No objective function. 
+## Constraints: 0</code></pre>
+</div>
+<div id="indexed-variables" class="section level2">
+<h2>Indexed variables</h2>
+<p>Often when you develop a complex model you work with indexed variables. This is an important concept <code>ompr</code> supports.</p>
+<pre class="r"><code>MILPModel() %&gt;% 
+  add_variable(x[i], i = 1:10) %&gt;%  # creates 10 decision variables
+  set_objective(x[5]) %&gt;% 
+  add_constraint(x[5] &lt;= 10)</code></pre>
+<pre><code>## Mixed integer linear optimization problem
+## Variables:
+##   Continuous: 10 
+##   Integer: 0 
+##   Binary: 0 
+## Model sense: maximize 
+## Constraints: 1</code></pre>
+</div>
+<div id="summation-over-variables" class="section level2">
+<h2>Summation over variables</h2>
+<p>If you have indexed variables then you often want to sum over a subset of variables.</p>
+<p>The following code creates a model with three decision variables <span class="math inline">\(x_1\)</span>, <span class="math inline">\(x_2\)</span>, <span class="math inline">\(x_3\)</span>. An objective function <span class="math inline">\(\sum_i x_i\)</span> and one constraint <span class="math inline">\(\sum_i x_i \leq 10\)</span>.</p>
+<pre class="r"><code>MILPModel() %&gt;% 
+  add_variable(x[i], i = 1:3) %&gt;% 
+  set_objective(sum_expr(x[i], i = 1:3)) %&gt;% 
+  add_constraint(sum_expr(x[i], i = 1:3) &lt;= 10)</code></pre>
+<pre><code>## Mixed integer linear optimization problem
+## Variables:
+##   Continuous: 3 
+##   Integer: 0 
+##   Binary: 0 
+## Model sense: maximize 
+## Constraints: 1</code></pre>
+</div>
+<div id="quantifiers" class="section level2">
+<h2>Quantifiers</h2>
+<p><code>add_variable</code>, <code>add_constraint</code>, <code>set_bounds</code>, <code>sum_expr</code> all support a common quantifier interface that also supports filter expression. A more complex example will show what that means.</p>
+<pre class="r"><code>MILPModel() %&gt;% 
+  # Create x_{i, j} variables for all combinations of i and j where
+  # i = 1:10 and j = 1:10.
+  add_variable(x[i, j], type = &quot;binary&quot;, i = 1:10, j = 1:10) %&gt;% 
+  
+  # add a y_i variable for all i between 1 and 10 with i mod 2 = 0
+  add_variable(y[i], type = &quot;binary&quot;, i = 1:10, i %% 2 == 0) %&gt;% 
+  
+  # we maximize all x_{i,j} where i = j + 1
+  set_objective(sum_expr(x[i, j], i = 1:10, j = 1:10, i == j + 1)) %&gt;% 
+  
+  # for each i between 1 and 10 with i mod 2 = 0
+  # we add a constraint \sum_j x_{i,j}
+  add_constraint(sum_expr(x[i, j], j = 1:10) &lt;= 1, i = 1:10, i %% 2 == 0) %&gt;% 
+  
+  # of course you can leave out filters or add more than 1
+  add_constraint(sum_expr(x[i, j], j = 1:10) &lt;= 2, i = 1:10) </code></pre>
+<pre><code>## Mixed integer linear optimization problem
+## Variables:
+##   Continuous: 0 
+##   Integer: 0 
+##   Binary: 105 
+## Model sense: maximize 
+## Constraints: 15</code></pre>
+</div>
+<div id="special-bounds-on-a-subset-of-variables" class="section level2">
+<h2>Special bounds on a subset of variables</h2>
+<p>Imagine you want to model a matching problem with a single binary decision variable <span class="math inline">\(x_{i,j}\)</span> that is <span class="math inline">\(1\)</span> iff object <span class="math inline">\(i\)</span> is matched to object <span class="math inline">\(j\)</span>. One constraint would be to allow matches only if <span class="math inline">\(i \neq j\)</span>. This can be modelled by a constraint or by selectively changing bounds on variables. The latter approach can be used by solvers to improve the solution process.</p>
+<pre class="r"><code>MILPModel() %&gt;% 
+  add_variable(x[i, j], i = 1:10, j = 1:10, 
+               type = &quot;integer&quot;, lb = 0, ub = 1) %&gt;% 
+  set_objective(sum_expr(x[i, j], i = 1:10, j = 1:10)) %&gt;% 
+  add_constraint(x[i, i] == 0, i = 1:10) %&gt;% 
+  
+   # this sets the ub to 0 without adding new constraints
+  set_bounds(x[i, i], ub = 0, i = 1:10)</code></pre>
+<pre><code>## Mixed integer linear optimization problem
+## Variables:
+##   Continuous: 0 
+##   Integer: 100 
+##   Binary: 0 
+## Model sense: maximize 
+## Constraints: 10</code></pre>
+</div>
+<div id="external-model-parameters" class="section level2">
+<h2>External model parameters</h2>
+<p>Of course you will need external parameters for your models. You can reuse any variable defined in your R environment within the MIP Model.</p>
+<pre class="r"><code>n &lt;- 5 # number of our variables
+costs &lt;- rpois(n, lambda = 3) # a cost vector
+max_elements &lt;- 3
+MILPModel() %&gt;% 
+  add_variable(x[i], type = &quot;binary&quot;, i = 1:n) %&gt;% 
+  set_objective(sum_expr(colwise(costs[i]) * x[i], i = 1:n)) %&gt;% 
+  add_constraint(sum_expr(x[i], i = 1:n) &lt;= max_elements)</code></pre>
+<pre><code>## Mixed integer linear optimization problem
+## Variables:
+##   Continuous: 0 
+##   Integer: 0 
+##   Binary: 5 
+## Model sense: maximize 
+## Constraints: 1</code></pre>
+</div>
+<div id="extract-model-solutions" class="section level2">
+<h2>Extract model solutions</h2>
+<p>Once you have a model, you pass it to a solver and get back a solutions. The main interface to extract variable values from a solution is the function <code>get_solution</code>. It returns a data.frame for indexed variable and thus makes it easy to subsequently use the value.</p>
+<p>We use <code>ROI</code> and <code>GLPK</code> to solve it.</p>
+<pre class="r"><code>library(ROI)</code></pre>
+<pre><code>## ROI.plugin.glpk: R Optimization Infrastructure</code></pre>
+<pre><code>## Registered solver plugins: nlminb, glpk.</code></pre>
+<pre><code>## Default solver: auto.</code></pre>
+<pre class="r"><code>library(ROI.plugin.glpk)
+library(ompr.roi)</code></pre>
+<pre class="r"><code>set.seed(1)
+n &lt;- 5
+weights &lt;- matrix(rpois(n * n, 5), ncol = n, nrow = n)
+# construct a function that is vectorized
+w &lt;- function(i, j) {
+  vapply(seq_along(i), function(k) weights[i[k], j[k]], numeric(1L))
+}
+result &lt;- MILPModel() %&gt;% 
+  add_variable(x[i, j], i = 1:n, j = 1:n, type = &quot;binary&quot;) %&gt;% 
+  set_objective(sum_expr(colwise(w(i, j)) * x[i, j], i = 1:n, j = 1:n)) %&gt;% 
+  add_constraint(sum_expr(x[i, j], j = 1:n) == 1, i = 1:n) %&gt;% 
+  solve_model(with_ROI(&quot;glpk&quot;, verbose = TRUE))</code></pre>
+<pre><code>## &lt;SOLVER MSG&gt;  ----
+## GLPK Simplex Optimizer, v4.63
+## 5 rows, 25 columns, 25 non-zeros
+##       0: obj =  -0.000000000e+00 inf =   5.000e+00 (5)
+##       5: obj =   2.400000000e+01 inf =   0.000e+00 (0)
+## *    14: obj =   4.400000000e+01 inf =   0.000e+00 (0)
+## OPTIMAL LP SOLUTION FOUND
+## GLPK Integer Optimizer, v4.63
+## 5 rows, 25 columns, 25 non-zeros
+## 25 integer variables, all of which are binary
+## Integer optimization begins...
+## +    14: mip =     not found yet &lt;=              +inf        (1; 0)
+## +    14: &gt;&gt;&gt;&gt;&gt;   4.400000000e+01 &lt;=   4.400000000e+01   0.0% (1; 0)
+## +    14: mip =   4.400000000e+01 &lt;=     tree is empty   0.0% (0; 1)
+## INTEGER OPTIMAL SOLUTION FOUND
+## &lt;!SOLVER MSG&gt; ----</code></pre>
+<pre class="r"><code>get_solution(result, x[i, j]) %&gt;% 
+  dplyr::filter(value == 1)</code></pre>
+<pre><code>##   variable i j value
+## 1        x 4 1     1
+## 2        x 2 2     1
+## 3        x 5 3     1
+## 4        x 3 4     1
+## 5        x 1 5     1</code></pre>
+<p>You can also fix certain indexes.</p>
+<pre class="r"><code>get_solution(result, x[2, j])</code></pre>
+<pre><code>##   variable j value
+## 1        x 1     0
+## 2        x 2     1
+## 3        x 3     0
+## 4        x 4     0
+## 5        x 5     0</code></pre>
+</div>
+<div id="vectorized-semantics-revisited" class="section level2">
+<h2>Vectorized semantics revisited</h2>
+<p>Each variable accepts vectors. The following code snippets show the behaviour by example:</p>
+<p>Instead of passing index variables through quantifiers, you can also use vectors directly. Each element of a vector creates a new row for that variable. The two constraint groups below are equivalent.</p>
+<pre class="r"><code>n &lt;- 10L
+MILPModel() %&gt;% 
+  add_variable(x[i, j], i = 1:n, j = 1:n) %&gt;% 
+  add_constraint(x[i, j] == 1, i = 1:n, j = 1:n, i == j) %&gt;% 
+  add_constraint(x[1:n, 1:n] == 1) # this this equivalent</code></pre>
+<pre><code>## Mixed integer linear optimization problem
+## Variables:
+##   Continuous: 100 
+##   Integer: 0 
+##   Binary: 0 
+## No objective function. 
+## Constraints: 20</code></pre>
+<p>You can also add vectors columnwise using the function <code>colwise</code> or <code>as_colwise</code>:</p>
+<pre class="r"><code>MILPModel() %&gt;% 
+  add_variable(x[i, j], i = 1:n, j = 1:n) %&gt;% 
+  add_constraint(sum_expr(x[i, j], i = 1:n) == 1, j = 1:n) %&gt;% 
+  add_constraint(x[1:n, colwise(1:n)] == 1) # this this equivalent</code></pre>
+<pre><code>## Mixed integer linear optimization problem
+## Variables:
+##   Continuous: 100 
+##   Integer: 0 
+##   Binary: 0 
+## No objective function. 
+## Constraints: 20</code></pre>
+<p>Another example:</p>
+<p>Say you want to express the below matrix:</p>
+<pre class="r"><code>x[1, 1]
+x[1, 1] + x[1, 2]
+x[1, 1] + x[1, 2] + x[1, 3]</code></pre>
+<p>With vectorized semantics you can do the following:</p>
+<pre class="r"><code>x[1, colwise(1, 1:2, 1:3)]</code></pre>
+<p>Or with the support of the <code>ompr</code> function <code>sum_expr</code></p>
+<pre class="r"><code>MILPModel() %&gt;% 
+  add_variable(x[i, j], i = 1, j = 1:n) %&gt;% 
+  add_constraint(sum_expr(x[1, j], j = colwise(1, 1:2, 1:3)) == 1)</code></pre>
+<pre><code>## Mixed integer linear optimization problem
+## Variables:
+##   Continuous: 10 
+##   Integer: 0 
+##   Binary: 0 
+## No objective function. 
+## Constraints: 3</code></pre>
+<div id="adding-variables---vectorized" class="section level3">
+<h3>Adding variables - vectorized</h3>
+<p>Sometimes, you want to control both variable indexes and their bounds very specifically. You can either use filter expressions together with <code>set_bounds</code> or pass in the concrete variable indexes explicitly.</p>
+<p>The following code is equivalent:</p>
+<pre class="r"><code>MILPModel() %&gt;% 
+  add_variable(x[i, j], i = 1:10, j = 1:10) </code></pre>
+<pre><code>## Mixed integer linear optimization problem
+## Variables:
+##   Continuous: 100 
+##   Integer: 0 
+##   Binary: 0 
+## No objective function. 
+## Constraints: 0</code></pre>
+<pre class="r"><code>grid &lt;- expand.grid(i = 1:10, j = 1:10)
+MILPModel() %&gt;% 
+  add_variable(x[grid$i, grid$j]) </code></pre>
+<pre><code>## Mixed integer linear optimization problem
+## Variables:
+##   Continuous: 100 
+##   Integer: 0 
+##   Binary: 0 
+## No objective function. 
+## Constraints: 0</code></pre>
+<p>In addition to the first block of code, you can also set bounds on the variables in the same way:</p>
+<pre class="r"><code>MILPModel() %&gt;% 
+  add_variable(x[grid$i, grid$j], lb = grid$i * 10, ub = grid$i * 20) </code></pre>
+<pre><code>## Mixed integer linear optimization problem
+## Variables:
+##   Continuous: 100 
+##   Integer: 0 
+##   Binary: 0 
+## No objective function. 
+## Constraints: 0</code></pre>
+<p>This is especially handy if you work with large models where a lot of index combinations are invalid. An example are routing problems, where you define a connection between two cities by a binary variable <code>x[i, j]</code> - a lot of <code>i,j</code> combinations are usually invalid and do not need to enter the model explicitly. Although a lot of solvers remove those variables during presolve.</p>
+</div>
+</div>

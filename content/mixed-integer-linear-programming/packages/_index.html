@@ -1,0 +1,12 @@
+---
+date: 2018-04-24T21:28:37+02:00
+title: Modelling packages
+weight: 30
+---
+
+
+
+<p>There are two general ways to formulate a mixed-integer program.</p>
+<p>One natural interface are matrices and vectors. Recall that you can describe a MILP by a cost vector <span class="math inline">\(c\)</span>, a matrix <span class="math inline">\(A\)</span> and a right-hand side vector <span class="math inline">\(b\)</span> (plus some coniditions on the variables). The benefit of this way modelling is that every solver supports this interface without the need of additional modelling languages.</p>
+<p>The second way is to formualte the model algebraically. Instead of coefficients, you can write down expressions. For example: <span class="math inline">\(x + 5*y \leq 10\)</span> instead of <span class="math inline">\(A = (1, 5)\)</span> and <span class="math inline">\(b = (10)\)</span>.</p>
+<p>In this section, both ways of modelling are described. The matrix oriented way is illustrated with the <a href="https://CRAN.R-project.org/package=ROI">ROI package</a> and the algebraic modelling approach is done with the <a href="https://CRAN.R-project.org/package=ompr">ompr package</a>.</p>

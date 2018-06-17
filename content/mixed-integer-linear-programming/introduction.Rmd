@@ -1,0 +1,30 @@
+---
+date: 2018-04-28T14:30:03+02:00
+title: Introduction
+weight: 5
+---
+
+We start this section with an introductory example: the [Knapsack Problem](https://en.wikipedia.org/wiki/Knapsack_problem).
+
+The goal is to put as many of $n$ items as possible with value $v_i$ and weight $w_i$ in a bag of capacity $W$. Imagine you are a shipping company and you need to decide what items you would like to put into a shipment container such that the overall profit is maximized.
+
+$$
+\begin{equation*}
+\begin{array}{ll@{}ll}
+\text{max}  & \displaystyle\sum\limits_{i=1}^{n} v_{i}x_{i} & &\\
+\text{subject to}& \displaystyle\sum\limits_{i=1}^{n}   w_{i}x_{i} \leq W,  & &\\
+                 &                                                x_{i} \in \{0,1\}, &i=1 ,\ldots, n&
+\end{array}
+\end{equation*}
+$$
+
+As alluded to in the beginning, this *integer program* consists of 3 parts:
+
+* An objective function (here it is the sum of item values)
+* A set of contraints. In this case, there is only one constraint that total weight of all items does not exceed the weight capacity $W$.
+* Some conditions on the variables. All variables are binary, meaning they are *bounded* by 0/1 and are *integers*. This allows the variables to be either 0 or 1.
+
+Having derived such a model that describes a relevant optimization problem, we need to solve it. The first step is to encode the problem in a way that an algorithm can understand it (the most basic form is a set of vectors and a constraint matrix). Having such a standard interface, many [specialized solvers](../solvers) have been developed over the years (both commercial and open-source) to solve these kind of problems at a scale required for real world problems.
+
+R has many packages that help you model and solve mixed-integer linear programs.
+The section about [modelling packages](../packages) shows how to model this problem in R.
