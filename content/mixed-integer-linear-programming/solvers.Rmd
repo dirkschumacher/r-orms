@@ -11,7 +11,8 @@ library(tibble)
 solvers <- tribble(
   ~Solver, ~`Solver License`, ~`R Packages`, ~`ROI Binding`,
   "[CBC](https://projects.coin-or.org/Cbc)", "EPL", "<i class='fa fa-fw fa-github'></i> [rcbc](https://github.com/dirkschumacher/rcbc)", "<i class='fa fa-fw fa-github'></i> [Yes](https://github.com/dirkschumacher/ROI.plugin.cbc)",
-  "[CPLEX](https://www.ibm.com/analytics/data-science/prescriptive-analytics/cplex-optimizer)", "Proprietary*", "[cplexAPI](https://CRAN.R-project.org/package=cplexAPI), [Rcplex](https://CRAN.R-project.org/package=Rcplex)", "[Yes](https://CRAN.R-project.org/package=ROI.plugin.cplex)",
+  "[CPLEX](https://www.ibm.com/analytics/data-science/prescriptive-analytics/cplex-optimizer)", "Proprietary*", "[cplexAPI](https://CRAN.R-project.org/package=cplexAPI), [Rcplex](https://CRAN.R-project.org/package=Rcplex)",
+"[Yes](https://CRAN.R-project.org/package=ROI.plugin.cplex)",
   "[Gurobi](http://www.gurobi.com/)", "Proprietary*", "[Self hosted](http://www.gurobi.com/products/modeling-languages/r)", "<i class='fa fa-fw fa-github'></i> [Yes](https://github.com/Fl0Sch/ROI.plugin.gurobi)",
   "[GLPK](https://www.gnu.org/software/glpk/)", "GPL", "[glpkAPI](https://CRAN.R-project.org/package=glpkAPI), [Rglpk](https://CRAN.R-project.org/package=Rglpk)", "[Yes](https://CRAN.R-project.org/package=ROI.plugin.glpk)",
   "[Mosek](https://www.mosek.com/)", "Proprietary*", "[Self hosted](https://docs.mosek.com/8.1/rmosek/install-interface.html)", "",
