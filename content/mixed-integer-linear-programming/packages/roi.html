@@ -21,7 +21,7 @@ draft: false
 <p>A first step is of course to load the package and define some model parameters:</p>
 <pre class="r"><code>library(ROI)</code></pre>
 <pre><code>## ROI.plugin.glpk: R Optimization Infrastructure</code></pre>
-<pre><code>## Registered solver plugins: nlminb, glpk.</code></pre>
+<pre><code>## Registered solver plugins: nlminb, cbc, glpk.</code></pre>
 <pre><code>## Default solver: auto.</code></pre>
 <pre class="r"><code>n &lt;- 10
 W &lt;- 2
@@ -50,25 +50,26 @@ model</code></pre>
 <pre class="r"><code>library(ROI.plugin.glpk)
 res &lt;- ROI_solve(model, &quot;glpk&quot;, verbose = TRUE)</code></pre>
 <pre><code>## &lt;SOLVER MSG&gt;  ----
-## GLPK Simplex Optimizer, v4.63
+## GLPK Simplex Optimizer, v4.65
 ## 1 row, 10 columns, 10 non-zeros
 ## *     0: obj =  -0.000000000e+00 inf =   0.000e+00 (10)
-## *     8: obj =   3.847203106e+00 inf =   0.000e+00 (0)
+## *     8: obj =   5.141899448e+00 inf =   0.000e+00 (0)
 ## OPTIMAL LP SOLUTION FOUND
-## GLPK Integer Optimizer, v4.63
+## GLPK Integer Optimizer, v4.65
 ## 1 row, 10 columns, 10 non-zeros
 ## 10 integer variables, all of which are binary
 ## Integer optimization begins...
+## Long-step dual simplex will be used
 ## +     8: mip =     not found yet &lt;=              +inf        (1; 0)
-## Solution found by heuristic: 3.80094569153
-## +     9: mip =   3.800945692e+00 &lt;=     tree is empty   0.0% (0; 1)
+## Solution found by heuristic: 4.99495245353
+## +     9: mip =   4.994952454e+00 &lt;=     tree is empty   0.0% (0; 1)
 ## INTEGER OPTIMAL SOLUTION FOUND
 ## &lt;!SOLVER MSG&gt; ----</code></pre>
 <pre class="r"><code>res</code></pre>
 <pre><code>## Optimal solution found.
-## The objective value is: 3.800946e+00</code></pre>
+## The objective value is: 4.994952e+00</code></pre>
 <p><code>ROI</code> provides function to access the optimal solution (i.e. the concrete values of all <span class="math inline">\(x_i\)</span>). A <span class="math inline">\(1\)</span> means, we put the object into our knapsack, a <span class="math inline">\(0\)</span> means the opposite.</p>
 <pre class="r"><code>ROI::solution(res)</code></pre>
-<pre><code>##  [1] 1 0 1 1 1 0 0 1 1 0</code></pre>
+<pre><code>##  [1] 1 1 0 1 1 1 0 0 1 1</code></pre>
 <p>And we are done: we solved the knapsack problem using GLPK and ROI.</p>
 </div>

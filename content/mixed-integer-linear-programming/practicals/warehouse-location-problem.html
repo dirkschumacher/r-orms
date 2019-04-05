@@ -109,7 +109,7 @@ model</code></pre>
 library(ROI.plugin.glpk)
 result &lt;- solve_model(model, with_ROI(solver = &quot;glpk&quot;, verbose = TRUE))</code></pre>
 <pre><code>## &lt;SOLVER MSG&gt;  ----
-## GLPK Simplex Optimizer, v4.63
+## GLPK Simplex Optimizer, v4.65
 ## 2100 rows, 2020 columns, 6000 non-zeros
 ##       0: obj =   0.000000000e+00 inf =   1.000e+02 (100)
 ##     101: obj =   5.223300000e+04 inf =   0.000e+00 (0)
@@ -117,10 +117,11 @@ result &lt;- solve_model(model, with_ROI(solver = &quot;glpk&quot;, verbose = TR
 ## Removing LP perturbation [857]...
 ## *   857: obj =   3.322200000e+04 inf =   0.000e+00 (0) 3
 ## OPTIMAL LP SOLUTION FOUND
-## GLPK Integer Optimizer, v4.63
+## GLPK Integer Optimizer, v4.65
 ## 2100 rows, 2020 columns, 6000 non-zeros
 ## 2020 integer variables, all of which are binary
 ## Integer optimization begins...
+## Long-step dual simplex will be used
 ## +   857: mip =     not found yet &gt;=              -inf        (1; 0)
 ## +   857: &gt;&gt;&gt;&gt;&gt;   3.322200000e+04 &gt;=   3.322200000e+04   0.0% (1; 0)
 ## +   857: mip =   3.322200000e+04 &gt;=     tree is empty   0.0% (0; 1)

@@ -54,15 +54,16 @@ model</code></pre>
 library(ROI.plugin.glpk)
 result &lt;- solve_model(model, with_ROI(solver = &quot;glpk&quot;, verbose = TRUE))</code></pre>
 <pre><code>## &lt;SOLVER MSG&gt;  ----
-## GLPK Simplex Optimizer, v4.63
+## GLPK Simplex Optimizer, v4.65
 ## 324 rows, 729 columns, 2916 non-zeros
 ##       0: obj =  -0.000000000e+00 inf =   3.240e+02 (324)
 ##     340: obj =  -0.000000000e+00 inf =   4.087e-14 (0) 1
 ## OPTIMAL LP SOLUTION FOUND
-## GLPK Integer Optimizer, v4.63
+## GLPK Integer Optimizer, v4.65
 ## 324 rows, 729 columns, 2916 non-zeros
 ## 729 integer variables, all of which are binary
 ## Integer optimization begins...
+## Long-step dual simplex will be used
 ## +   340: mip =     not found yet &lt;=              +inf        (1; 0)
 ## +  1075: &gt;&gt;&gt;&gt;&gt;   0.000000000e+00 &lt;=   0.000000000e+00   0.0% (43; 0)
 ## +  1075: mip =   0.000000000e+00 &lt;=     tree is empty   0.0% (0; 85)
@@ -98,15 +99,16 @@ result %&gt;%
   add_constraint(x[3, 3, 9] == 1)
 result &lt;- solve_model(model_fixed, with_ROI(solver = &quot;glpk&quot;, verbose = TRUE))</code></pre>
 <pre><code>## &lt;SOLVER MSG&gt;  ----
-## GLPK Simplex Optimizer, v4.63
+## GLPK Simplex Optimizer, v4.65
 ## 333 rows, 729 columns, 2925 non-zeros
 ##       0: obj =  -0.000000000e+00 inf =   3.330e+02 (333)
 ##     354: obj =  -0.000000000e+00 inf =   1.250e-13 (0) 1
 ## OPTIMAL LP SOLUTION FOUND
-## GLPK Integer Optimizer, v4.63
+## GLPK Integer Optimizer, v4.65
 ## 333 rows, 729 columns, 2925 non-zeros
 ## 729 integer variables, all of which are binary
 ## Integer optimization begins...
+## Long-step dual simplex will be used
 ## +   354: mip =     not found yet &lt;=              +inf        (1; 0)
 ## +   992: &gt;&gt;&gt;&gt;&gt;   0.000000000e+00 &lt;=   0.000000000e+00   0.0% (44; 0)
 ## +   992: mip =   0.000000000e+00 &lt;=     tree is empty   0.0% (0; 87)
