@@ -7,9 +7,9 @@ weight: 5
 R for Operations Research
 ====
 
-This website provides free ressources around R and [Operations Research](https://en.wikipedia.org/wiki/Operations_research). It is work in progress and a hobby project.
+This website provides free resources around R and [Operations Research](https://en.wikipedia.org/wiki/Operations_research). It is work in progress and a hobby project.
 
-At the moment, there are only ressources about mixed integer linear programming:
+At the moment, there are only resources about mixed integer linear programming:
 
 * [Mixed-integer linear programming](/mixed-integer-linear-programming)
 

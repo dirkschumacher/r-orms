@@ -6,7 +6,7 @@ draft: false
 R for OR
 ----------
 
-This website is a hobby project to gather and write free ressources around the usage of R for operations research. 
+This website is a hobby project to gather and write free resources around the usage of R for operations research. 
 
 The code on this website is licensed under MIT:
 
